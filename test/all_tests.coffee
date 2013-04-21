@@ -7,7 +7,7 @@ class StringJoiner
   constructor: (@str1, @str2) ->
   concat: (delimiter, callback) ->
     setTimeout =>
-      callback "#{@str1}#{delimiter}#{@str2}"
+      callback null, "#{@str1}#{delimiter}#{@str2}"
     , 0
     return
 
@@ -23,7 +23,7 @@ vows
           async: (arg1, arg2) ->
             setTimeout ->
               wrapper.fulfill new StringJoiner(arg1, arg2)
-            , 1
+            , 0
             wrapper = maybe.wrap StringJoiner.prototype
 
       "returns a wrapper with a callable 'concat' method":
