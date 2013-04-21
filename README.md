@@ -1,0 +1,4 @@
+callmemaybe
+===========
+
+chained().asynchronous().invocations()
