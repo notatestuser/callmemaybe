@@ -1,0 +1,39 @@
+{
+  "name": "callmemaybe",
+  "description": "chained().asynchronous().invocation()",
+  "version": "0.1.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/vows/bin/vows --spec test/*.coffee"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/notatestuser/callmemaybe.git"
+  },
+  "keywords": [
+    "chained",
+    "asynchronous",
+    "callbacks"
+  ],
+  "engines": {
+    "node": "~0.9.12 || ~0.10.0"
+  },
+  "author": {
+    "name": "Luke Plaster",
+    "email": "notatestuser@gmail.com",
+    "url": "http://lukep.org/"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://lp.mit-license.org/"
+    }
+  ],
+  "dependencies": {
+    "underscore": "~1.4.4"
+  },
+  "devDependencies": {
+    "coffee-script": "~1.6.2",
+    "vows": "~0.7.0"
+  }
+}
