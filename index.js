@@ -22,11 +22,21 @@ var _ = require('underscore')
     var proxy = {
       __queued_calls__: {}
     };
-    proxy.fulfill = function(obj) {
+    proxy.fulfill = function(obj, args, ctx) {
       Object.keys(proxy.__queued_calls__).forEach(function(method) {
-        var calls = proxy.__queued_calls__[method]
+        var calls = proxy.__queued_calls__[method] || []
+          , callArgs
+          , callbackFn;
         while (calls.length) {
-          proto[method].apply(obj, calls.shift())
+          callArgs = calls.shift()
+          if (typeof obj === 'string') {
+            // named fulfillment: assume a callback was passed as the last param
+            callbackFn = callArgs[callArgs.length - 1]
+            callbackFn.apply(ctx || this, args || [])
+          } else {
+            // instance fulfillment: make the call ourselves (callback may be anywhere)
+            proto[method].apply(obj, callArgs)
+          }
         }
       })
     }
@@ -83,7 +93,7 @@ var _ = require('underscore')
 
     properties = properties || []
     objProps   = findProperties(proto)
-    proxy      = createProxy(proto)
+    proxy      = createProxy   (proto)
 
     if (properties.length) {
       // selectively proxy the requested props
