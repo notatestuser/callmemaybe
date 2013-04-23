@@ -16,14 +16,14 @@ class StringJoiner
 
 ### Helpers ###
 
-testStringJoinWithInstanceFulfillment = (blueprint) ->
+testStringJoinWithInstanceFulfillment = (blueprint, props) ->
   topic: ->
     new class
       async: (arg1, arg2) ->
         setTimeout ->
           wrapper.fulfill new StringJoiner(arg1, arg2)
         , 0
-        wrapper = maybe.wrap blueprint
+        wrapper = maybe.wrap blueprint, props
 
   "returns a wrapper with a callable 'concat' method":
     topic: (instance) ->
@@ -32,15 +32,15 @@ testStringJoinWithInstanceFulfillment = (blueprint) ->
     "and the callback is called with the result we expected": (joined) ->
       assert.equal joined, 'hi there'
 
-testStringJoinWithNamedFulfillment = (blueprint) ->
-  context = testStringJoinWithInstanceFulfillment(blueprint)
+testStringJoinWithNamedFulfillment = (blueprint, props) ->
+  context = testStringJoinWithInstanceFulfillment(blueprint, props)
   _.extend context,
     topic: ->
       new class
         async: (arg1, arg2) ->
           (new StringJoiner(arg1, arg2)).concat ' ', ->
             wrapper.fulfill 'concat', arguments, @
-          wrapper = maybe.wrap blueprint
+          wrapper = maybe.wrap blueprint, props
   context
 
 ### Tests ###
@@ -49,10 +49,10 @@ vows
   .describe('Mediary')
   .addBatch(
 
-    "StringJoiner.prototype (instance)": testStringJoinWithInstanceFulfillment (StringJoiner.prototype)
-    "StringJoiner.prototype (named)":    testStringJoinWithNamedFulfillment    (StringJoiner.prototype)
-    "StringJoiner (instance)":           testStringJoinWithInstanceFulfillment (StringJoiner)
-    "StringJoiner (named)":              testStringJoinWithNamedFulfillment    (StringJoiner)
-
+    "StringJoiner.prototype (instance)": testStringJoinWithInstanceFulfillment(StringJoiner.prototype, null)
+    "StringJoiner.prototype (named)":    testStringJoinWithNamedFulfillment(StringJoiner.prototype, null)
+    "StringJoiner (instance)":           testStringJoinWithInstanceFulfillment(StringJoiner, null)
+    "StringJoiner (named)":              testStringJoinWithNamedFulfillment(StringJoiner, null)
+    "StringJoiner (named), with args":   testStringJoinWithNamedFulfillment(StringJoiner, ['concat'])
 
   ).export(module)

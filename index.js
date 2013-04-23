@@ -3,7 +3,7 @@
 //     https://github.com/notatestuser/callmemaybe.js
 
 // TODO: make this work outside of Node
-var _ = require('underscore')
+require('./utils/array').extend();
 
 // do the universal module definition dance
 (function (root, factory) {
@@ -97,7 +97,7 @@ var _ = require('underscore')
 
     if (properties.length) {
       // selectively proxy the requested props
-      properties = _.intersection(objProps, properties);
+      properties = objProps.intersect(properties);
     } else {
       // proxy everything we found
       properties = objProps;
@@ -113,4 +113,3 @@ var _ = require('underscore')
   return Maybe;
 
 }));
-
