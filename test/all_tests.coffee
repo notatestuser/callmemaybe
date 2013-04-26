@@ -14,6 +14,34 @@ class StringJoiner
     , 0
     return
 
+class Greeting
+  constructor: ->
+    @greeting = 'hello'
+  shout: ->
+    setTimeout ->
+      wrapper.fulfill new LoudGreeting(@greeting)
+    , 0
+    wrapper = maybe.wrap LoudGreeting
+  describeMethods: ->
+    shout: LoudGreeting
+
+class LoudGreeting
+  constructor: (greeting) ->
+    @greeting = greeting.toUpperCase()
+  exclaim: ->
+    setTimeout ->
+      wrapper.fulfill new ExclaimedGreeting(@greeting)
+    , 0
+    wrapper = maybe.wrap ExclaimedGreeting
+  describeMethods: ->
+    exclaim: ExclaimedGreeting
+
+class ExclaimedGreeting
+  constructor: (greeting) ->
+    @greeting = "#{greeting}!"
+  get: ->
+    @greeting
+
 ### Helpers ###
 
 testStringJoinWithInstanceFulfillment = (blueprint, props) ->
@@ -54,5 +82,19 @@ vows
     "StringJoiner (instance)":           testStringJoinWithInstanceFulfillment(StringJoiner, null)
     "StringJoiner (named)":              testStringJoinWithNamedFulfillment(StringJoiner, null)
     "StringJoiner (named), with args":   testStringJoinWithNamedFulfillment(StringJoiner, ['concat'])
+
+    "A chain of callbacks":
+      topic: ->
+        new class
+          greeting: ->
+            wrapper = maybe.wrap Greeting, props
+            wrapper.fulfill new Greeting()
+
+      "returns a wrapper with a callable 'concat' method":
+        topic: (instance) ->
+          instance.greeting().shout().exclaim().get(@callback)
+
+      "and the callback is called with the result we expected": (joined) ->
+        assert.equal joined, 'HELLO!'
 
   ).export(module)
