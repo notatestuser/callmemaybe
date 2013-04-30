@@ -56,6 +56,7 @@ testStringJoinWithInstanceFulfillment = (blueprint, props) ->
   "returns a wrapper with a callable 'concat' method":
     topic: (instance) ->
       instance.async('hi', 'there').concat(' ', @callback)
+      return
 
     "and the callback is called with the result we expected": (joined) ->
       assert.equal joined, 'hi there'
@@ -87,14 +88,14 @@ vows
       topic: ->
         new class
           greeting: ->
-            wrapper = maybe.wrap Greeting, props
-            wrapper.fulfill new Greeting()
+            new Greeting()
 
-      "returns a wrapper with a callable 'concat' method":
+      "returns something we expect":
         topic: (instance) ->
           instance.greeting().shout().exclaim().get(@callback)
+          return
 
-      "and the callback is called with the result we expected": (joined) ->
-        assert.equal joined, 'HELLO!'
+        "and the callback is called with the result we expected": (joined) ->
+          assert.equal joined, 'HELLO!'
 
   ).export(module)
