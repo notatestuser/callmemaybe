@@ -18,8 +18,13 @@ require('./utils/array').extend();
 
 }(this, function() {
 
+  var Maybe = {};
+
+  // --------------------
+
   function createProxy(proto) {
     var proxy = {
+      __proxy__: true,
       __queued_calls__: {}
     };
     proxy.fulfill = function(obj, args, ctx) {
@@ -29,15 +34,31 @@ require('./utils/array').extend();
           , callbackFn;
         while (calls.length) {
           callArgs = calls.shift()
-          if (typeof obj === 'string') {
-            // named fulfillment: assume a callback was passed as the last param
-            callbackFn = callArgs[callArgs.length - 1]
-            callbackFn.apply(ctx || this, args || [])
-          } else {
-            // instance fulfillment: make the call ourselves (callback may be anywhere)
+          if (callArgs.__proxy__) {
+            console.log('  chained fulfillment');
+            // chained fulfillment - assume callArgs is a proxy
+            // .. perform the next call
+            callArgs.push(function(err, result) {
+              // TODO error handling
+              callArgs.fulfill(method, result)
+            })
             proto[method].apply(obj, callArgs)
+          } else {
+            console.log('  unchained fulfillment');
+            // unchained fulfillment
+            if (typeof obj === 'string') {
+              console.log('  named fulfillment');
+              // named fulfillment: assume a callback was passed as the last param
+              callbackFn = callArgs[callArgs.length - 1]
+              callbackFn.apply(ctx || this, args || [])
+            } else {
+              console.log('  instance fulfillment');
+              // instance fulfillment: make the call ourselves (callback may be anywhere)
+              proto[method].apply(obj, callArgs)
+            }
           }
         }
+        return this;
       })
     }
     return proxy
@@ -54,7 +75,7 @@ require('./utils/array').extend();
     return props;
   }
 
-  function proxyFunctions(proxy, proto, properties) {
+  function proxyFunctions(proxy, obj, proto, properties) {
     properties.forEach(function(prop) {
       if (typeof(proto[prop]) === 'function') {
         Object.defineProperty(proxy, prop, {
@@ -63,7 +84,24 @@ require('./utils/array').extend();
               if ( ! proxy.__queued_calls__[prop]) {
                 proxy.__queued_calls__[prop] = []
               }
-              proxy.__queued_calls__[prop].push(arguments)
+              // if the last parameter was a callback, we're not chaining
+              if (typeof arguments[arguments.length - 1] === 'function') {
+                console.log('action: queue call');
+                // just push the array of call arguments into __queued_calls__
+                proxy.__queued_calls__[prop].push(arguments);
+                return null;
+              } else {
+                console.log('action: chaining mode');
+                // initiate chaining mode
+                // at this point, the call on our proxied property is going to have to be queued
+                // for fulfillment at a later point in time, so let's do that
+                if ( ! proto.describeMethods) {
+                  throw Error(prop+"(): We couldn't find a describeMethods() method on the chained prototype to proxy")
+                }
+                nextProxy = Maybe.wrap((proto.describeMethods.apply(obj))[prop], null, arguments);
+                proxy.__queued_calls__[prop].push(nextProxy);
+                return nextProxy;
+              }
             }
           },
           enumerable: true
@@ -74,13 +112,11 @@ require('./utils/array').extend();
 
   // --------------------
 
-  var Maybe = {};
-
   // Maybe.wrap
   // --------------------
   // Outputs the tree line-by-line, calling the lineCallback when each one is available.
 
-  Maybe.wrap = function(obj, properties) {
+  Maybe.wrap = function(obj, properties, args) {
     var proto = obj,
         proxy;
 
@@ -93,7 +129,7 @@ require('./utils/array').extend();
 
     properties = properties || []
     objProps   = findProperties(proto)
-    proxy      = createProxy   (proto)
+    proxy      = createProxy   (proto, args)
 
     if (properties.length) {
       // selectively proxy the requested props
@@ -103,7 +139,7 @@ require('./utils/array').extend();
       properties = objProps;
     }
 
-    proxyFunctions(proxy, proto, properties);
+    proxyFunctions(proxy, obj, proto, properties);
 
     return proxy;
   };
